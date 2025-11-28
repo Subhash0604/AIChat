@@ -7,7 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send } from "lucide-react";
-import { Message } from "@/types/index";
+
+type Message = {
+  role: "user" | "assistant";
+  text: string;
+};
 
 export default function ChatPage() {
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -29,7 +33,7 @@ export default function ChatPage() {
       const { data } = await axios.post<{
         reply: string;
         conversationId: string;
-      }>(`${process.env.NEXT_PUBLIC_API_URL}/chat`, {
+      }>("/api/support", {
         message: input,
         conversationId,
       });
@@ -41,7 +45,7 @@ export default function ChatPage() {
     } catch (err: any) {
       const errorMsg: Message = {
         role: "assistant",
-        text: err.response?.data?.error || "Error: Unable to get response",
+        text: err.response?.data?.error || err.message || "Error: Unable to get response",
       };
       setMessages((old) => [...old, errorMsg]);
     } finally {
@@ -50,20 +54,20 @@ export default function ChatPage() {
   };
 
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    setTimeout(() => {
+      scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }, 50);
   }, [messages, isTyping]);
 
   return (
-    <div className="flex justify-center items-center min-h-screenfrom-gray-100 to-white p-4">
+    <div className="flex justify-center items-center min-h-screen p-4 bg-gray-50">
       <Card className="w-full max-w-3xl shadow-xl rounded-2xl border border-gray-200">
         <CardContent className="flex flex-col h-[80vh]">
-   
           <div className="flex items-center justify-between border-b border-gray-200 pb-3 mb-3">
             <h2 className="text-xl font-semibold text-gray-800">Support Chat</h2>
             <span className="text-sm text-gray-500">GPT-2.5 AI Assistant</span>
           </div>
 
-       
           <ScrollArea className="flex-1 p-4 bg-gray-50 rounded-lg overflow-y-auto">
             <div className="space-y-4">
               {messages.map((msg, i) => (
@@ -72,7 +76,7 @@ export default function ChatPage() {
                   className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`rounded-2xl px-5 py-3 max-w-[70%] text-sm shadow-md  ${
+                    className={`rounded-2xl px-5 py-3 max-w-[70%] text-sm shadow-md ${
                       msg.role === "user"
                         ? "bg-blue-600 text-white rounded-br-none"
                         : "bg-white text-gray-800 rounded-bl-none border border-gray-200"
@@ -83,7 +87,6 @@ export default function ChatPage() {
                 </div>
               ))}
 
-            
               {isTyping && (
                 <div className="flex justify-start">
                   <div className="rounded-2xl px-5 py-3 max-w-[70%] text-sm shadow-md bg-white text-gray-500 animate-pulse">
@@ -91,10 +94,11 @@ export default function ChatPage() {
                   </div>
                 </div>
               )}
+
               <div ref={scrollRef} />
             </div>
           </ScrollArea>
- 
+
           <div className="mt-4 flex gap-2 items-end">
             <Textarea
               rows={1}
